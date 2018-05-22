@@ -63,7 +63,7 @@ int main(int argc, char **argv)
     /*
      * evaluate k-to-velocity conversion constant
      */
-    vel_const = (10000.0)*(6.63E-34)/((2.0*3.14159)*(0.063)*(0.11E-30));
+    vel_const = (10000.0)*(6.63E-34)/((2.0*3.14159)*(0.063)*(9.11E-30));
 
     /* get number of trials from user */
     numtrials = 0;
@@ -163,7 +163,7 @@ float energy_from_k(kvecptr)
 
     temp = vx*vx + vy*vy + vz*vz;
 
-    temp = (0.5)*(0.063)*(0.11E-30)*temp*(0.0001)/(1.6E-19);
+    temp = (0.5)*(0.063)*(9.11E-30)*temp*(0.0001)/(1.6E-19);
 
     return temp;
 }
@@ -201,7 +201,7 @@ void    coord_convert(firstkptr, theta_r, phi_r, lastkptr)
 
     lastkptr->y = sin(phi) * cos(theta) * k2prime.x
         + sin(phi) * sin(theta) * k2prime.z
-        - cos(phi) * k2prime.y;
+        + cos(phi) * k2prime.y;
 
     lastkptr->z = cos(theta) * k2prime.z - sin(theta) * k2prime.z;
 }
