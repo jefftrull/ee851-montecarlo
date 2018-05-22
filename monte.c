@@ -9,7 +9,6 @@
 #include "monte.h"
 
 /* predeclarations */
-void main();
 void init_vector();
 void coord_convert();
 float energy_from_k();
@@ -25,15 +24,16 @@ float     maxlambda;     /* highest lambda ever calculated */
 float     xvel_avg;
 int       num_real_events;
 
-void main(argc, argv)
-    int argc;
-    char **argv;
+int main(int argc, char **argv)
     /* initialize, then perform a number of scattering events specified by the
      * user.  Print relevant statistics after the run
      */
 {
+    (void)argc;          /* unused */
+    (void)argv;
+
+
     float    energy;     /* temporaries */
-    float    avg_vel;
     float    ts;
     float    lambda;
     float    phi, theta;
@@ -91,7 +91,6 @@ void main(argc, argv)
 
     /* initialize and begin scattering */
     energy = 0.0;
-    avg_vel = 0.0;
     init_vector(&kinit);
     init_vector(&kfinal);
     cur_trial = 0;
