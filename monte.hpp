@@ -13,24 +13,46 @@
 #ifndef MONTE_HPP
 #define MONTE_HPP
 
+#include <boost/math/constants/constants.hpp>
+#include <boost/units/systems/si/codata/universal_constants.hpp>
+#include <boost/units/systems/si/codata/electron_constants.hpp>
+#include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
+
 // constants
+constexpr double two_pi  = boost::math::constants::two_pi<double>();
+constexpr double echarge = boost::units::si::constants::codata::e / boost::units::si::coulomb;
+constexpr double dirac   = boost::units::si::constants::codata::hbar /
+                           (boost::units::si::joule * boost::units::si::second);
+constexpr double T       = 300.0;  // room temperature in Kelvin
 
 /*
  * evaluate the constant of proportionality between the acoustic
  * scattering rate and the square root of the electron energy
  */
-double const scatter_const = (0.449E18)*(0.015813)*(300.0)*(49)/((5.37)*(270.4E9));
+// components of the scattering rate constant:
+constexpr double E1 = 7;       // Acoustic deformation potential in eV
+constexpr double rho = 5.37;   // Crystal density in g/cm^3
+constexpr double u = 5.2E5;    // speed of sound in crystal, cm/s
+constexpr double meff = 0.063; // effective electron mass in gamma (000) valley (unitless)
+
+constexpr double scatter_const =
+    (0.449E18 * pow(meff, 1.5) * T * (E1*E1)) /
+    (rho * (u*u)) ;
 
 /*
  * evaluate the accelerations due to the constant electric field
  * between collisions
  */
-double const accel_const = 2.0*3.14159*(1.6E-19)*(10000.0)/(6.63E-34);
+constexpr double Efield = 10000.0;   // Applied field (V/cm)
+constexpr double accel_const = echarge * Efield / dirac ;
 
 /*
  * evaluate k-to-velocity conversion constant
  */
-double const vel_const = (10000.0)*(6.63E-34)/((2.0*3.14159)*(0.063)*(9.11E-30));
+constexpr double m_e       = boost::units::si::constants::codata::m_e /   // electron mass
+                             boost::units::si::kilogram ;
+constexpr double vel_const = (Efield * dirac)/(meff * m_e) ;
+
 
 // types
 
@@ -65,7 +87,7 @@ Float energy_from_k(vector_cptr<Float> kvecptr)
 
     temp = vx*vx + vy*vy + vz*vz;
 
-    temp = (0.5)*(0.063)*(9.11E-30)*temp*(0.0001)/(1.6E-19);
+    temp = 0.5 * meff * m_e * temp/(echarge * Efield);
 
     return temp;
 }

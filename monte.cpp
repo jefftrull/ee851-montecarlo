@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 
         /* determine the angles of the new vector */
         theta =acos(2.0*drand48()-1);
-        phi = 2.0 * 3.14159*drand48();
+        phi = two_pi * drand48();
 
         /* determine the resultant vector, kfinal */
         coord_convert(&kinit, theta, phi, &kfinal);
