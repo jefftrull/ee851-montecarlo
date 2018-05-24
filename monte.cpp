@@ -6,22 +6,14 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
-#include "monte.h"
+#include "monte.hpp"
 
-void    init_vector(vector_ptr vecptr);
-float   energy_from_k(vector_ptr kvecptr);
-void    coord_convert(vector_ptr firstkptr,
-                      float theta_r,
-                      float phi_r,
-                      vector_ptr lastkptr);
+using vector = vector_str<float>;
 
 vector    kfinal;        /* k vector after collision */
 vector    kinit;         /* k vector prior to collision */
 float     capgamma;      /* total scattering rate */
 int       numtrials;     /* number of scattering events to perform */
-float     scatter_const; /* constants of proportionality */
-float     accel_const;
-float     vel_const;
 float     maxlambda;     /* highest lambda ever calculated */
 float     xvel_avg;
 int       num_real_events;
@@ -50,22 +42,6 @@ int main(int argc, char **argv)
     num_real_events = 0;     /* initialize some statistics */
     maxlambda = 0.0;
     xvel_avg = 0.0;
-    /*
-     * evaluate the constant of proportionality between the acoustic
-     * scattering rate and the square root of the electron energy
-     */
-    scatter_const = (0.449E18)*(0.015813)*(300.0)*(49)/((5.37)*(270.4E9));
-
-    /*
-     * evaluate the accelerations due to the constant electric field
-     * between collisions
-     */
-    accel_const = 2.0*3.14159*(1.6E-19)*(10000.0)/(6.63E-34);
-
-    /*
-     * evaluate k-to-velocity conversion constant
-     */
-    vel_const = (10000.0)*(6.63E-34)/((2.0*3.14159)*(0.063)*(9.11E-30));
 
     /* get number of trials from user */
     numtrials = 0;
@@ -94,10 +70,21 @@ int main(int argc, char **argv)
     }
     srand48(seed);
 
+/*
+    ts = -(1.0/capgamma)*log(drand48());
+    long newseed = 1;
+    while (fabs(ts - 1.155194e-11) > 1e-18) {
+        srand48(newseed++);
+        ts = -(1.0/capgamma)*log(drand48());
+    }
+    printf("timestep %g is within %g of desired value %g\n", ts, 1e-13, 1.155194e-11);
+    printf("because their difference is %g\n", ts - 1.155194e-11);
+
+    printf("succeeded with seed = %ld\n", newseed-1);
+*/
+
     /* initialize and begin scattering */
     energy = 0.0;
-    init_vector(&kinit);
-    init_vector(&kfinal);
     cur_trial = 0;
 
     while (cur_trial < numtrials) {
@@ -149,62 +136,4 @@ int main(int argc, char **argv)
         printf("%d", cur_trial);
         printf("\t\t%e\t\t%e\n", scat_times[cur_trial], vel_mags[cur_trial]);
     }
-}
-
-/* k to energy conversion */
-float energy_from_k(vector_ptr kvecptr)
-/*
- * determine squared velocity, then multiply by effective mass
- * and divide by two, converting to electron volts
- */
-{
-    float    vx, vy, vz;      /* velocity components */
-    float    temp;
-
-    vx = vel_const * kvecptr->x;
-    vy = vel_const * kvecptr->y;
-    vz = vel_const * kvecptr->z;
-
-    temp = vx*vx + vy*vy + vz*vz;
-
-    temp = (0.5)*(0.063)*(9.11E-30)*temp*(0.0001)/(1.6E-19);
-
-    return temp;
-}
-
-void    init_vector(vector_ptr vecptr)
-{
-    vecptr->x = vecptr->y = vecptr->z = 0.0;
-}
-
-void    coord_convert(vector_ptr firstkptr,
-                      float theta_r,
-                      float phi_r,
-                      vector_ptr lastkptr)
-{
-    float    theta, phi;
-    vector   k2prime;
-    float    totalk;
-
-    phi   = atan(firstkptr->y/firstkptr->x);
-    theta = atan(sqrt(firstkptr->x*firstkptr->x +
-                      firstkptr->y*firstkptr->y)/firstkptr->z);
-
-    totalk = sqrt(firstkptr->x*firstkptr->x +
-                  firstkptr->y*firstkptr->y +
-                  firstkptr->z*firstkptr->z);
-
-    k2prime.x = totalk * sin(theta_r) * cos(phi_r);
-    k2prime.y = totalk * sin(theta_r) * sin(phi_r);
-    k2prime.z = totalk * cos(theta_r);
-
-    lastkptr->x = cos(phi) * cos(theta) * k2prime.x
-        + cos(phi) * sin(theta) * k2prime.z
-        - sin(phi) * k2prime.y;
-
-    lastkptr->y = sin(phi) * cos(theta) * k2prime.x
-        + sin(phi) * sin(theta) * k2prime.z
-        + cos(phi) * k2prime.y;
-
-    lastkptr->z = cos(theta) * k2prime.z - sin(theta) * k2prime.z;
 }
