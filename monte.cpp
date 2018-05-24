@@ -1,17 +1,19 @@
 /*
- * monte.c - monte carlo simulation of acoustic phonon scattering
+ * monte.cpp - monte carlo simulation of acoustic phonon scattering
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
 #include "monte.h"
 
-/* predeclarations */
-void init_vector();
-void coord_convert();
-float energy_from_k();
+void    init_vector(vector_ptr vecptr);
+float   energy_from_k(vector_ptr kvecptr);
+void    coord_convert(vector_ptr firstkptr,
+                      float theta_r,
+                      float phi_r,
+                      vector_ptr lastkptr);
 
 vector    kfinal;        /* k vector after collision */
 vector    kinit;         /* k vector prior to collision */
@@ -67,25 +69,28 @@ int main(int argc, char **argv)
 
     /* get number of trials from user */
     numtrials = 0;
-    while (numtrials <= 0) {
+    int scanf_err = 1;
+    while ((numtrials <= 0) || (scanf_err != 1)) {
         printf("Number of scattering events to perform: ");
-        scanf("%d", &numtrials);
+        scanf_err = scanf("%d", &numtrials);
     }
     scat_times = (float *)malloc(sizeof(float)*numtrials);
     vel_mags   = (float *)malloc(sizeof(float)*numtrials);
 
     /* get the total scattering rate from the user */
     capgamma = 0.0;
-    while (capgamma <= 0.0) {
+    scanf_err = 1;
+    while ((capgamma <= 0.0) || (scanf_err != 1)) {
         printf("Total scattering rate: ");
-        scanf("%f", &capgamma);
+        scanf_err = scanf("%f", &capgamma);
     }
 
     /* get a seed for the random number generator */
     seed = 0.0;
-    while (seed <= 0.0) {
+    scanf_err = 1;
+    while ((seed <= 0.0) || (scanf_err != 1)) {
         printf("Random number generator seed : ");
-        scanf("%f", &seed);
+        scanf_err = scanf("%f", &seed);
     }
     srand48(seed);
 
@@ -147,8 +152,7 @@ int main(int argc, char **argv)
 }
 
 /* k to energy conversion */
-float energy_from_k(kvecptr)
-    vector_ptr kvecptr;
+float energy_from_k(vector_ptr kvecptr)
 /*
  * determine squared velocity, then multiply by effective mass
  * and divide by two, converting to electron volts
@@ -168,16 +172,15 @@ float energy_from_k(kvecptr)
     return temp;
 }
 
-void    init_vector(vecptr)
-    vector_ptr vecptr;
+void    init_vector(vector_ptr vecptr)
 {
     vecptr->x = vecptr->y = vecptr->z = 0.0;
 }
 
-void    coord_convert(firstkptr, theta_r, phi_r, lastkptr)
-    vector_ptr firstkptr;
-    float theta_r, phi_r;
-    vector_ptr lastkptr;
+void    coord_convert(vector_ptr firstkptr,
+                      float theta_r,
+                      float phi_r,
+                      vector_ptr lastkptr)
 {
     float    theta, phi;
     vector   k2prime;
