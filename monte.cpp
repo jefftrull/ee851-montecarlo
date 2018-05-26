@@ -2,21 +2,30 @@
  * monte.cpp - monte carlo simulation of acoustic phonon scattering
  */
 
+#include <vector>
+#include <iostream>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <boost/units/systems/si.hpp>
+#include <boost/units/cmath.hpp>
+#include <boost/units/io.hpp>
 #include "monte.hpp"
+
+using namespace boost::units;
+using namespace boost::units::si;
+using namespace monte;
 
 using vector = vector_str<float>;
 
-vector    kfinal;        /* k vector after collision */
-vector    kinit;         /* k vector prior to collision */
-float     capgamma;      /* total scattering rate */
-int       numtrials;     /* number of scattering events to perform */
-float     maxlambda;     /* highest lambda ever calculated */
-float     xvel_avg;
-int       num_real_events;
+vector                kfinal;        /* k vector after collision */
+vector                kinit;         /* k vector prior to collision */
+float                 capgamma_f;    /* total scattering rate */
+int                   numtrials;     /* number of scattering events to perform */
+quantity<frequency>   maxlambda;     /* highest lambda ever calculated */
+int                   num_real_events;
 
 int main(int argc, char **argv)
     /* initialize, then perform a number of scattering events specified by the
@@ -27,21 +36,13 @@ int main(int argc, char **argv)
     (void)argv;
 
 
-    float    energy;     /* temporaries */
-    float    ts;
-    float    lambda;
     float    phi, theta;
-    float    lastkx;
-    float    cur_avg;
     float    seed;
 
-    float    *scat_times;    /* output arrays */
-    float    *vel_mags;
     int      cur_trial;
 
     num_real_events = 0;     /* initialize some statistics */
-    maxlambda = 0.0;
-    xvel_avg = 0.0;
+    maxlambda = quantity<frequency>{0};
 
     /* get number of trials from user */
     numtrials = 0;
@@ -50,16 +51,17 @@ int main(int argc, char **argv)
         printf("Number of scattering events to perform: ");
         scanf_err = scanf("%d", &numtrials);
     }
-    scat_times = (float *)malloc(sizeof(float)*numtrials);
-    vel_mags   = (float *)malloc(sizeof(float)*numtrials);
+    std::vector<quantity<si::time, float>> scat_times(numtrials);
+    std::vector<quantity<si::velocity, float>> vel_mags(numtrials);
 
     /* get the total scattering rate from the user */
-    capgamma = 0.0;
+    capgamma_f = 0.0;
     scanf_err = 1;
-    while ((capgamma <= 0.0) || (scanf_err != 1)) {
+    while ((capgamma_f <= 0.0) || (scanf_err != 1)) {
         printf("Total scattering rate: ");
-        scanf_err = scanf("%f", &capgamma);
+        scanf_err = scanf("%f", &capgamma_f);
     }
+    quantity<frequency> capgamma = capgamma_f * hertz;
 
     /* get a seed for the random number generator */
     seed = 0.0;
@@ -84,12 +86,14 @@ int main(int argc, char **argv)
 */
 
     /* initialize and begin scattering */
-    energy = 0.0;
     cur_trial = 0;
+
+    quantity<wavenumber>    lastkx;
+    quantity<velocity>  xvel_avg{0};
 
     while (cur_trial < numtrials) {
         /* determine the time until the scattering event */
-        ts = -(1.0/capgamma)*log(drand48());
+        quantity<si::time> ts = -(1.0/capgamma)*log(drand48());
         lastkx = kinit.x;
 
         /* accelerate the particle accordingly */
@@ -101,12 +105,12 @@ int main(int argc, char **argv)
         cur_trial++;
 
         /* do average velocity calculations */
-        cur_avg = vel_const * (lastkx + kinit.x)/(2.0);
-        xvel_avg = (xvel_avg*((float)(cur_trial - 1)) + cur_avg)/((float)cur_trial);
+        quantity<velocity> cur_avg = vel_const * (lastkx + kinit.x)/2.0;
+        xvel_avg = (xvel_avg*(double)(cur_trial - 1) + cur_avg)/(double)cur_trial;
 
         /* determine the new acoustic scattering rate lambda */
-        energy = energy_from_k(&kinit);
-        lambda = scatter_const * sqrt(energy);
+        quantity<energy, float> energy = energy_from_k(&kinit);
+        quantity<frequency> lambda = scatter_const * sqrt(energy);
         if (lambda > maxlambda) {
             maxlambda = lambda;              /* possibly useful statistic */
         }
@@ -128,12 +132,10 @@ int main(int argc, char **argv)
     }
 
     /* now print out results - good idea to pipe this through more */
-    printf("%d real events out of %d, maximum lambda %e\n",
-           num_real_events, numtrials, maxlambda);
-    printf("average x velocity %e\n", xvel_avg);
-    printf("event\t\tscattering time\t\tvelocity\n");
+    std::cout << num_real_events << " real events out of " << numtrials << ", maximum lambda " << maxlambda << "\n" ;
+    std::cout << "average x velocity " << xvel_avg << "\n";
+    std::cout << "event\t\tscattering time\t\tvelocity\n";
     for (cur_trial = 0; cur_trial < numtrials; cur_trial++) {
-        printf("%d", cur_trial);
-        printf("\t\t%e\t\t%e\n", scat_times[cur_trial], vel_mags[cur_trial]);
+        std::cout << cur_trial << "\t\t" << scat_times[cur_trial] << "\t\t" << vel_mags[cur_trial] << "\n";
     }
 }
