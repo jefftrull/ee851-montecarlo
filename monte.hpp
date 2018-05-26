@@ -20,6 +20,43 @@
 #include <boost/units/systems/si/codata/electron_constants.hpp>
 #include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
 
+#include <boost/accumulators/numeric/functional.hpp>
+
+// Accumulators don't like Boost.Units for various reasons
+// but as usual there are customization points we can use to fix things
+// I will do one as a training exercise but if writing this for others
+// I would probably write a single-purpose custom accumulator of my own...
+
+// teach Accumulators how to divide a double quantity by an integer
+namespace boost { namespace numeric { namespace functional
+{
+// Tag type
+template<typename Unit, typename Float>
+struct QuantityTag {};
+
+// Specialize tag<> for any boost::units::quantity
+template<typename Unit, typename Float>
+struct tag<typename units::quantity<Unit, Float>>
+{
+    using type = QuantityTag<Unit, Float>;
+};
+
+// Specify how to divide a quantity by an integral count
+template<typename Left, typename Right, typename Unit, typename Float>
+struct fdiv<Left, Right, QuantityTag<Unit, Float>, void>
+{
+    // Define the type of the result
+    using result_type = units::quantity<Unit, Float>;
+
+    result_type operator()(Left & left, Right & right) const
+    {
+        // just cast the RHS to double, which will make units happy
+        return left / ((double)right) ;
+    }
+};
+
+}}}
+
 namespace monte {
 
 using namespace boost::units::si;

@@ -9,6 +9,10 @@
 #include <boost/units/systems/si.hpp>
 #include <boost/units/cmath.hpp>
 #include <boost/units/io.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+
 #include "monte.hpp"
 
 using namespace boost::units;
@@ -72,7 +76,10 @@ int main(int argc, char **argv)
     cur_trial = 0;
 
     quantity<wavenumber>    lastkx;
-    quantity<velocity>  xvel_avg{0};
+
+    // Use Boost.Accumulators to produce an average velocity
+    using namespace boost::accumulators;
+    accumulator_set<quantity<velocity>, stats<tag::mean>> vel_acc;
 
     while (cur_trial < numtrials) {
         /* determine the time until the scattering event */
@@ -89,7 +96,7 @@ int main(int argc, char **argv)
 
         /* do average velocity calculations */
         quantity<velocity> cur_avg = vel_const * (lastkx + kinit.x)/2.0;
-        xvel_avg = (xvel_avg*(double)(cur_trial - 1) + cur_avg)/(double)cur_trial;
+        vel_acc(cur_avg);
 
         /* determine the new acoustic scattering rate lambda */
         quantity<energy, float> energy = kinit.get_energy();
@@ -115,7 +122,7 @@ int main(int argc, char **argv)
 
     /* now print out results - good idea to pipe this through more */
     std::cout << num_real_events << " real events out of " << numtrials << ", maximum lambda " << maxlambda << "\n" ;
-    std::cout << "average x velocity " << xvel_avg << "\n";
+    std::cout << "average x velocity " << mean(vel_acc) << "\n";
     std::cout << "event\t\tscattering time\t\tvelocity\n";
     for (cur_trial = 0; cur_trial < numtrials; cur_trial++) {
         std::cout << cur_trial << "\t\t" << scat_times[cur_trial] << "\t\t" << vel_mags[cur_trial] << "\n";
