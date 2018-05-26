@@ -4,8 +4,10 @@
 
 #include <vector>
 #include <iostream>
+#include <random>
 
 #include <cmath>
+
 #include <boost/units/systems/si.hpp>
 #include <boost/units/cmath.hpp>
 #include <boost/units/io.hpp>
@@ -70,7 +72,9 @@ int main(int argc, char **argv)
         printf("Random number generator seed : ");
         scanf_err = scanf("%f", &seed);
     }
-    srand48(seed);
+    std::mt19937 randeng(seed);
+    std::uniform_real_distribution<double> drand_dist(0, 1.0);
+    auto drand = [&]() { return drand_dist(randeng); };
 
     /* initialize and begin scattering */
     cur_trial = 0;
@@ -83,7 +87,7 @@ int main(int argc, char **argv)
 
     while (cur_trial < numtrials) {
         /* determine the time until the scattering event */
-        quantity<si::time> ts = -(1.0/capgamma)*log(drand48());
+        quantity<si::time> ts = -(1.0/capgamma)*log(drand());
         lastkx = kinit.x;
 
         /* accelerate the particle accordingly */
@@ -106,15 +110,15 @@ int main(int argc, char **argv)
         }
 
         /* determine if acoustic scattering event occurred */
-        if (drand48() >= (lambda/capgamma)) {
+        if (drand() >= (lambda/capgamma)) {
             /* no, keep going */
             continue;
         }
         num_real_events++;
 
         /* determine the angles of the new vector */
-        theta =acos(2.0*drand48()-1);
-        phi = two_pi * drand48();
+        theta =acos(2.0*drand()-1);
+        phi = two_pi * drand();
 
         /* determine the resultant vector and replace */
         kinit = kinit.collision_result(theta, phi);
