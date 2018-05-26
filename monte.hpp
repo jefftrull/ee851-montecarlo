@@ -78,6 +78,14 @@ template<typename Float>
 struct vector_str {
     vector_str() = default;
     boost::units::quantity<wavenumber, Float> x, y, z;
+
+    // the energy associated with this k state
+    boost::units::quantity<energy, Float> get_energy() const;
+
+    // new set of k resulting from a collision
+    vector_str
+    collision_result(Float theta_r, Float phi_r) const;
+
 };
 
 template<typename Float>
@@ -91,7 +99,7 @@ using vector_cptr = vector_str<Float> const *;
 /* k to energy conversion */
 template<typename Float>
 boost::units::quantity<energy, Float>
-energy_from_k(vector_cptr<Float> kvecptr)
+vector_str<Float>::get_energy() const
 /*
  * This appears to be very complicated and depends on which region
  * of reciprocal lattice space the electron currently occupies.
@@ -102,8 +110,7 @@ energy_from_k(vector_cptr<Float> kvecptr)
 {
     constexpr auto C = (dirac * dirac) / (2.0 * meff * m_e) ;
 
-    boost::units::quantity<energy> nrg =
-        C * ((kvecptr->x * kvecptr->x) + (kvecptr->y * kvecptr->y) + (kvecptr->z * kvecptr->z));
+    boost::units::quantity<energy> nrg = C * ((x * x) + (y * y) + (z * z));
 
     // returning above calculation directly gets a compile error
     // but we can explicitly convert it to another (possibly lower) precision *shrug*
@@ -112,10 +119,8 @@ energy_from_k(vector_cptr<Float> kvecptr)
 }
 
 template<typename Float>
-void    coord_convert(vector_cptr<Float> firstkptr,
-                      Float theta_r,
-                      Float phi_r,
-                      vector_ptr<Float> lastkptr)
+vector_str<Float>
+vector_str<Float>::collision_result(Float theta_r, Float phi_r) const
 {
     using namespace boost::units;
 
@@ -123,27 +128,27 @@ void    coord_convert(vector_cptr<Float> firstkptr,
     vector_str<Float>                 k2prime;
     quantity<si::wavenumber, Float>   totalk;
 
-    phi   = atan(firstkptr->y/firstkptr->x);
-    theta = atan(sqrt(firstkptr->x*firstkptr->x +
-                      firstkptr->y*firstkptr->y)/firstkptr->z);
+    phi   = atan(y/x);
+    theta = atan(sqrt(x*x + y*y)/z);
 
-    totalk = sqrt(firstkptr->x*firstkptr->x +
-                  firstkptr->y*firstkptr->y +
-                  firstkptr->z*firstkptr->z);
+    totalk = sqrt(x*x + y*y + z*z);
 
     k2prime.x = totalk * sin(theta_r) * cos(phi_r);
     k2prime.y = totalk * sin(theta_r) * sin(phi_r);
     k2prime.z = totalk * cos(theta_r);
 
-    lastkptr->x = cos(phi) * cos(theta) * k2prime.x
+    vector_str<Float> lastk;
+    lastk.x = cos(phi) * cos(theta) * k2prime.x
         + cos(phi) * sin(theta) * k2prime.z
         - sin(phi) * k2prime.y;
 
-    lastkptr->y = sin(phi) * cos(theta) * k2prime.x
+    lastk.y = sin(phi) * cos(theta) * k2prime.x
         + sin(phi) * sin(theta) * k2prime.z
         + cos(phi) * k2prime.y;
 
-    lastkptr->z = cos(theta) * k2prime.z - sin(theta) * k2prime.z;
+    lastk.z = cos(theta) * k2prime.z - sin(theta) * k2prime.z;
+
+    return lastk;
 }
 
 }

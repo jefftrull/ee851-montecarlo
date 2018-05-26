@@ -20,7 +20,6 @@ using namespace monte;
 
 using vector = vector_str<float>;
 
-vector                kfinal;        /* k vector after collision */
 vector                kinit;         /* k vector prior to collision */
 float                 capgamma_f;    /* total scattering rate */
 int                   numtrials;     /* number of scattering events to perform */
@@ -72,19 +71,6 @@ int main(int argc, char **argv)
     }
     srand48(seed);
 
-/*
-    ts = -(1.0/capgamma)*log(drand48());
-    long newseed = 1;
-    while (fabs(ts - 1.155194e-11) > 1e-18) {
-        srand48(newseed++);
-        ts = -(1.0/capgamma)*log(drand48());
-    }
-    printf("timestep %g is within %g of desired value %g\n", ts, 1e-13, 1.155194e-11);
-    printf("because their difference is %g\n", ts - 1.155194e-11);
-
-    printf("succeeded with seed = %ld\n", newseed-1);
-*/
-
     /* initialize and begin scattering */
     cur_trial = 0;
 
@@ -109,7 +95,7 @@ int main(int argc, char **argv)
         xvel_avg = (xvel_avg*(double)(cur_trial - 1) + cur_avg)/(double)cur_trial;
 
         /* determine the new acoustic scattering rate lambda */
-        quantity<energy, float> energy = energy_from_k(&kinit);
+        quantity<energy, float> energy = kinit.get_energy();
         quantity<frequency> lambda = scatter_const * sqrt(energy);
         if (lambda > maxlambda) {
             maxlambda = lambda;              /* possibly useful statistic */
@@ -126,9 +112,8 @@ int main(int argc, char **argv)
         theta =acos(2.0*drand48()-1);
         phi = two_pi * drand48();
 
-        /* determine the resultant vector, kfinal */
-        coord_convert(&kinit, theta, phi, &kfinal);
-        bcopy(&kfinal, &kinit, sizeof(vector));
+        /* determine the resultant vector and replace */
+        kinit = kinit.collision_result(theta, phi);
     }
 
     /* now print out results - good idea to pipe this through more */
