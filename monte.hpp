@@ -27,35 +27,32 @@
 // I will do one as a training exercise but if writing this for others
 // I would probably write a single-purpose custom accumulator of my own...
 
-// teach Accumulators how to divide a double quantity by an integer
-namespace boost { namespace numeric { namespace functional
+namespace boost { namespace numeric
 {
-// Tag type
-template<typename Unit, typename Float>
-struct QuantityTag {};
+// teach Accumulators how to produce a value of "one" for double/float times
+// as the default weight for our time-weighted average velocity
+// It shouldn't be necessary for the calculation since we will always supply a weight...
 
-// Specialize tag<> for any boost::units::quantity
-template<typename Unit, typename Float>
-struct tag<typename units::quantity<Unit, Float>>
+// specialize one<>
+template<typename Float>
+struct one<boost::units::quantity<boost::units::si::time, Float>>
 {
-    using type = QuantityTag<Unit, Float>;
-};
+    using type = one;
+    using value_type = boost::units::quantity<boost::units::si::time, Float>;
+    static value_type const value;
 
-// Specify how to divide a quantity by an integral count
-template<typename Left, typename Right, typename Unit, typename Float>
-struct fdiv<Left, Right, QuantityTag<Unit, Float>, void>
-{
-    // Define the type of the result
-    using result_type = units::quantity<Unit, Float>;
-
-    result_type operator()(Left & left, Right & right) const
+    operator value_type const & () const
     {
-        // just cast the RHS to double, which will make units happy
-        return left / ((double)right) ;
+        return one::value;
     }
 };
 
-}}}
+template<typename Float>
+boost::units::quantity<boost::units::si::time, Float> const
+one<boost::units::quantity<boost::units::si::time, Float>>::value =
+    Float{1.0} * boost::units::si::second;
+
+}}
 
 namespace monte {
 

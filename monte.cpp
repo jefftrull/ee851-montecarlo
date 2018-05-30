@@ -33,7 +33,7 @@
 #include <boost/units/io.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/weighted_mean.hpp>
 
 #include "monte.hpp"
 
@@ -103,7 +103,10 @@ int main(int argc, char **argv)
 
     // Use Boost.Accumulators to produce an average velocity
     using namespace boost::accumulators;
-    accumulator_set<quantity<velocity>, stats<tag::mean>> vel_acc;
+    accumulator_set<quantity<velocity>,      // what we are storing
+                    stats<tag::mean>,        // what we want to calculate
+                    quantity<si::time>>      // the weight for each data point
+        vel_acc;
 
     while (cur_trial < numtrials) {
         /* determine the time until the scattering event */
@@ -120,7 +123,7 @@ int main(int argc, char **argv)
 
         /* do average velocity calculations */
         quantity<velocity> cur_avg = vel_const * (lastkx + kinit.x)/2.0;
-        vel_acc(cur_avg);    // I feel like this should be weighted by the time in flight?
+        vel_acc(cur_avg, weight = ts);
 
         /* determine the new acoustic scattering rate lambda */
         quantity<energy, float> energy = kinit.get_energy();
