@@ -13,7 +13,7 @@
 #ifndef MONTE_HPP
 #define MONTE_HPP
 
-#include <cmath>
+#include <boost/units/cmath.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/units/systems/si.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
@@ -161,19 +161,22 @@ vector_str<Float>::collision_result(Float theta_r, Float phi_r) const
 {
     using namespace boost::units;
 
+    // calculate our current spherical angles
     quantity<si::plane_angle, Float>  theta, phi;
-    vector_str<Float>                 k2prime;
-    quantity<si::wavenumber, Float>   totalk;
-
     phi   = atan(y/x);
     theta = atan(sqrt(x*x + y*y)/z);
+    // and our current rho (radius)
+    // total crystal momentum is preserved
+    quantity<si::wavenumber, Float> total_k;
+    total_k = sqrt(x*x + y*y + z*z);   // cannot be directly initialized, for some reason...
 
-    totalk = sqrt(x*x + y*y + z*z);
+    // determine momentum components if original vector were Z axis aligned:
+    vector_str<Float> k2prime;
+    k2prime.x = total_k * sin(theta_r) * cos(phi_r);
+    k2prime.y = total_k * sin(theta_r) * sin(phi_r);
+    k2prime.z = total_k * cos(theta_r);
 
-    k2prime.x = totalk * sin(theta_r) * cos(phi_r);
-    k2prime.y = totalk * sin(theta_r) * sin(phi_r);
-    k2prime.z = totalk * cos(theta_r);
-
+    // rotate to reflect actual initial angles and return
     vector_str<Float> lastk;
     lastk.x = cos(phi) * cos(theta) * k2prime.x
         + cos(phi) * sin(theta) * k2prime.z

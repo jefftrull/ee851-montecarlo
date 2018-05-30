@@ -2,6 +2,26 @@
  * monte.cpp - monte carlo simulation of acoustic phonon scattering
  */
 
+/*
+ * HISTORY
+ * 16-Oct-88 Jeffrey Trull (jt1j) at Carnegie-Mellon University
+ *       Created
+ * 23-May-18 Jeffrey Trull (edaskel@att.net)
+ *       Converted to Modern C++, fixed bugs
+ */
+
+// Note to interested readers:
+// This program is an updated version of a programming assignment from a semiconductor
+// physics class in 1988... The textbook was Michael Shur's "GaAs Devices and Circuits".
+// The assignment was to estimate the electron mobility in the material by simulating
+// one particular scattering mechanism: acoustic phonons. This was done not because they
+// are the dominant mechanism, but because it makes for a tractable problem :)
+// The general approach followed is given in Chapter 2 of Shur's textbook; another helpful
+// source I (in retrospect) found is:
+// Jacoboni and Reggiani: Monte Carlo Method in Transport (Rev Mod Phys, July 1983)
+// which gives a more detailed explanation/motivation of the process
+
+
 #include <vector>
 #include <iostream>
 #include <random>
@@ -100,7 +120,7 @@ int main(int argc, char **argv)
 
         /* do average velocity calculations */
         quantity<velocity> cur_avg = vel_const * (lastkx + kinit.x)/2.0;
-        vel_acc(cur_avg);
+        vel_acc(cur_avg);    // I feel like this should be weighted by the time in flight?
 
         /* determine the new acoustic scattering rate lambda */
         quantity<energy, float> energy = kinit.get_energy();
@@ -112,13 +132,27 @@ int main(int argc, char **argv)
         /* determine if acoustic scattering event occurred */
         if (drand() >= (lambda/capgamma)) {
             /* no, keep going */
+            // this is a "self-scattering" event, a fake event that makes inverting the simulation
+            // (choosing a flight time at random instead of using fixed intervals and testing
+            // each one) work out right
             continue;
         }
         num_real_events++;
 
         /* determine the angles of the new vector */
-        theta =acos(2.0*drand()-1);
+
+        // If I understand this correctly we are calculating the angle theta between
+        // the original k (taken facing along the Z axis) and k'
+        // theta is the polar angle (declination from Z ("up"))
+        // Taking dP(theta)d(theta) ~ sin(theta)d(theta), we need integration constants
+        // that give the right total from 0 to pi and the right values at the extremes
+        // (0 at 0, 1 at pi). P(theta) = 0.5*(1-cos(theta)) fits.
+        theta = acos(1 - 2.0*drand());
+        // phi, the "azimuthal angle" (from x in the direction of y) is uniformly distributed
         phi = two_pi * drand();
+        // This is consistent with the approach in "Bulk Monte Carlo Method Described",
+        // https://nanohub.org/resources/4844/download/montecarlocodedescribed.pdf
+        // Should I have used the more complex procedure described in Shur p23?
 
         /* determine the resultant vector and replace */
         kinit = kinit.collision_result(theta, phi);
