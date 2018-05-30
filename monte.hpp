@@ -183,7 +183,7 @@ vector_str<Float>::collision_result(Float theta_r, Float phi_r) const
         + sin(phi) * sin(theta) * k2prime.z
         + cos(phi) * k2prime.y;
 
-    lastk.z = cos(theta) * k2prime.z - sin(theta) * k2prime.z;
+    lastk.z = cos(theta) * k2prime.z - sin(theta) * k2prime.x;
 
     return lastk;
 }
