@@ -164,6 +164,7 @@ int main(int argc, char **argv)
     /* now print out results - good idea to pipe this through more */
     std::cout << num_real_events << " real events out of " << numtrials << ", maximum lambda " << maxlambda << "\n" ;
     std::cout << "average x velocity " << no_prefix << mean(vel_acc) << "\n";
+    std::cout << "estimated mobility: " << ((mean(vel_acc) / Efield) / ((cm*cm)/(volt*second))).value() << " cm^2/Vs\n";
     std::cout << "event\t\tscattering time\t\tvelocity\n";
     for (cur_trial = 0; cur_trial < numtrials; cur_trial++) {
         std::cout << cur_trial << "\t\t" << engineering_prefix << scat_times[cur_trial] << "\t\t" << no_prefix << vel_mags[cur_trial] << "\n";

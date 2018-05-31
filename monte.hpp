@@ -43,6 +43,7 @@ struct one<boost::units::quantity<boost::units::si::time, Float>>
 
     operator value_type const & () const
     {
+        throw std::runtime_error("we should never get here");
         return one::value;
     }
 };
@@ -59,21 +60,24 @@ namespace monte {
 using namespace boost::units::si;
 
 // constants
-constexpr double two_pi  = boost::math::constants::two_pi<double>();
-constexpr auto   echarge = constants::codata::e;
-constexpr auto   dirac   = constants::codata::hbar;
-constexpr auto   T       = 300.0 * kelvin;  // room temperature
-constexpr auto   cm      = 0.01 * meter;
+constexpr double two_pi   = boost::math::constants::two_pi<double>();
+constexpr double     pi   = boost::math::constants::pi<double>();
+constexpr auto   echarge  = constants::codata::e;
+constexpr auto   dirac    = constants::codata::hbar;
+constexpr auto   T        = 300.0 * kelvin;  // room temperature
+constexpr auto   cm       = 0.01 * meter;
+constexpr auto   angstrom = 1e-10 * meter;
 
 /*
  * evaluate the constant of proportionality between the acoustic
  * scattering rate and the square root of the electron energy
  */
-// components of the scattering rate constant:
 constexpr auto   eV = echarge * volt;
-constexpr auto   E1 = 7.0 * eV;            // Acoustic deformation potential
 constexpr auto   g  = 10e-3 * kilogram;
 constexpr auto   cm3 = cm*cm*cm;
+
+// properties of GaAs
+constexpr auto   E1 = 7.0 * eV;            // Acoustic deformation potential
 constexpr auto   rho = 5.37 * g / cm3;     // Crystal density
 constexpr auto   u = 5.2E5 * cm / second;  // speed of sound in GaAs
 constexpr double meff = 0.063; // effective electron mass in gamma (000) valley (unitless)
