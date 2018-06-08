@@ -163,13 +163,12 @@ vector_str<Float>::collision_result(Float theta_r, Float phi_r) const
     using namespace boost::units;
 
     // calculate our current spherical angles
-    quantity<si::plane_angle, Float>  theta, phi;
-    phi   = atan(y/x);
-    theta = atan(sqrt(x*x + y*y)/z);
+    using angle = quantity<si::plane_angle, Float>;
+    angle phi{atan(y/x)};
+    angle theta{atan(sqrt(x*x + y*y)/z)};
     // and our current rho (radius)
     // total crystal momentum is preserved
-    quantity<si::wavenumber, Float> total_k;
-    total_k = sqrt(x*x + y*y + z*z);   // cannot be directly initialized, for some reason...
+    quantity<si::wavenumber, Float> total_k{sqrt(x*x + y*y + z*z)};
 
     // determine momentum components if original vector were Z axis aligned:
     vector_str<Float> k2prime;
